@@ -3,7 +3,7 @@ import animationData from "@/components/widgets/hzomhqxz.json";
 import Lottie from "@/components/widgets/lottie.vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-
+import { getSystemConfiguration, getSystemLogo, fetchAndApplySystemConfiguration } from "@/helpers/themeConfig";
 
 import "swiper/css";
 import "swiper/css/autoplay";
@@ -22,7 +22,33 @@ export default {
                     return '<span class=' + className + '>' + (index + 1) + '</span>';
                 },
             },
+            systemLogo: null,
+            systemConfig: null,
         };
+    },
+    computed: {
+        appName() {
+            return this.systemConfig?.app_name || "Support Desk";
+        },
+        footerCopyright() {
+            const year = new Date().getFullYear();
+            if (this.systemConfig?.footer_copyright_text) {
+                let text = this.systemConfig.footer_copyright_text;
+                if (text.includes("{year}")) text = text.replace(/{year}/g, year);
+                if (text.includes("{appName}")) text = text.replace(/{appName}/g, this.appName);
+                return text;
+            }
+            return `© ${year} ${this.appName}. All rights reserved.`;
+        },
+    },
+    async mounted() {
+        this.systemLogo = getSystemLogo();
+        this.systemConfig = getSystemConfiguration();
+        const freshConfig = await fetchAndApplySystemConfiguration();
+        if (freshConfig) {
+            this.systemConfig = freshConfig;
+            this.systemLogo = freshConfig.system_logo || null;
+        }
     },
     components: {
         lottie: Lottie,
@@ -47,7 +73,8 @@ export default {
                                         <div class="position-relative h-100 d-flex flex-column">
                                             <div class="mb-4">
                                                 <router-link to="/" class="d-block">
-                                                    <img src="@/assets/images/logo-light.png" alt="" height="18">
+                                                    <img v-if="systemLogo" :src="systemLogo" alt="System Logo" style="max-height: 40px; max-width: 180px; object-fit: contain;">
+                                                    <img v-else src="/aai_logo.png" alt="" height="32" style="max-height: 40px; object-fit: contain;">
                                                 </router-link>
                                             </div>
                                             <div class="mt-auto">
@@ -95,9 +122,9 @@ export default {
                                         <div class="mt-4 pt-2">
                                             <h5>You are Logged Out</h5>
                                             <p class="text-muted">Thank you for using <span
-                                                    class="fw-semibold">velzon</span> admin template</p>
+                                                    class="fw-semibold">{{ appName }}</span></p>
                                             <div class="mt-4">
-                                                <router-link to="/auth/signin-basic" class="btn btn-primary w-100">Sign
+                                                <router-link to="/login" class="btn btn-primary w-100">Sign
                                                     In</router-link>
                                             </div>
                                         </div>
@@ -116,8 +143,7 @@ export default {
                 <BRow>
                     <BCol lg="12">
                         <div class="text-center">
-                            <p class="mb-0">&copy; {{ new Date().getFullYear() }} Velzon. Crafted with <i
-                                    class="mdi mdi-heart text-danger"></i> by Themesbrand</p>
+                            <p class="mb-0 text-muted">{{ footerCopyright }}</p>
                         </div>
                     </BCol>
                 </BRow>

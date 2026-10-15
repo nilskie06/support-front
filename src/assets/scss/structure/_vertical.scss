@@ -200,6 +200,20 @@
     }
 }
 
+.sidebar-logo-lg {
+    max-height: 28px;
+    max-width: 140px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.sidebar-logo-sm {
+    max-height: 22px;
+    max-width: 26px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
 .hamburger-icon {
     width: 20px;
     height: 14px;

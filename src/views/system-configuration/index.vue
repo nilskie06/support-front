@@ -425,10 +425,142 @@
             <!-- TAB 5: GENERAL INFO -->
             <div v-show="currentTab === 'general'">
               <div class="mb-4">
-                <h5 class="fw-bold mb-1">General System Information</h5>
+                <h5 class="fw-bold mb-1">General System Information & Branding</h5>
                 <p class="text-muted fs-13">
-                  Metadata and general organizational configuration parameters for this system deployment.
+                  Upload your corporate logo and configure system-wide organization identity parameters.
                 </p>
+              </div>
+
+              <!-- SYSTEM LOGO UPLOAD (DRAG & DROP) -->
+              <div class="mb-4 p-3 bg-light rounded border">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div>
+                    <label class="form-label fw-semibold fs-14 mb-0">System Logo</label>
+                    <p class="text-muted fs-12 mb-0">
+                      Upload your logo here. It will automatically update the sidebar and navigation branding across the entire portal.
+                    </p>
+                  </div>
+                  <span v-if="generalConfig.systemLogo" class="badge bg-success-subtle text-success fs-12">
+                    <i class="ri-check-line me-1"></i> Custom Logo Active
+                  </span>
+                  <span v-else class="badge bg-secondary-subtle text-muted fs-12">
+                    Default Velzon Logo
+                  </span>
+                </div>
+
+                <!-- Hidden File Input -->
+                <input
+                  type="file"
+                  ref="logoFileInput"
+                  class="d-none"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"
+                  @change="onLogoFileSelected"
+                />
+
+                <!-- Dropzone Area -->
+                <div
+                  class="logo-dropzone p-4 rounded text-center border-dashed cursor-pointer transition-all position-relative"
+                  :class="{
+                    'dropzone-active': logoDragOver,
+                    'border-primary': logoDragOver,
+                    'has-logo-bg': generalConfig.systemLogo
+                  }"
+                  @dragover="onLogoDragOver"
+                  @dragleave="onLogoDragLeave"
+                  @drop="onLogoDrop"
+                  @click="triggerLogoFileInput"
+                >
+                  <!-- Case 1: Logo Uploaded / Exists -->
+                  <div v-if="generalConfig.systemLogo" class="logo-preview-wrapper w-100" @click.stop>
+                    <div class="row g-3 justify-content-center align-items-center">
+                      <!-- Dark Background Preview -->
+                      <div class="col-sm-6 col-md-5">
+                        <div class="p-3 rounded bg-dark border text-center shadow-sm">
+                          <small class="text-white-50 text-uppercase d-block mb-2 fs-11 fw-semibold">
+                            Dark Sidebar Mode Preview
+                          </small>
+                          <div class="d-flex align-items-center justify-content-center" style="height: 52px;">
+                            <img
+                              :src="generalConfig.systemLogo"
+                              alt="Logo Dark Preview"
+                              class="img-fluid"
+                              style="max-height: 40px; max-width: 160px; object-fit: contain;"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Light Background Preview -->
+                      <div class="col-sm-6 col-md-5">
+                        <div class="p-3 rounded bg-white border text-center shadow-sm">
+                          <small class="text-muted text-uppercase d-block mb-2 fs-11 fw-semibold">
+                            Light Sidebar Mode Preview
+                          </small>
+                          <div class="d-flex align-items-center justify-content-center" style="height: 52px;">
+                            <img
+                              :src="generalConfig.systemLogo"
+                              alt="Logo Light Preview"
+                              class="img-fluid"
+                              style="max-height: 40px; max-width: 160px; object-fit: contain;"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-3 d-flex justify-content-center gap-2">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        @click.stop="triggerLogoFileInput"
+                      >
+                        <i class="ri-upload-2-line me-1"></i> Change Logo
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        @click.stop="removeLogo"
+                      >
+                        <i class="ri-delete-bin-line me-1"></i> Remove Logo
+                      </button>
+                    </div>
+                    <p class="text-muted fs-11 mt-2 mb-0">
+                      Or drag and drop a new image to replace. Click "Save General Settings" below to persist changes.
+                    </p>
+                  </div>
+
+                  <!-- Case 2: No Logo Uploaded -->
+                  <div v-else class="py-2">
+                    <div class="avatar-md mx-auto mb-3">
+                      <div class="avatar-title bg-light text-primary rounded-circle fs-24 border">
+                        <i class="ri-upload-cloud-2-line"></i>
+                      </div>
+                    </div>
+                    <h6 class="fs-14 fw-semibold mb-1">
+                      Drag & Drop your logo file here
+                    </h6>
+                    <p class="text-muted fs-12 mb-3">
+                      or <span class="text-primary fw-medium text-decoration-underline">browse files</span> from your computer
+                    </p>
+                    <div class="d-inline-flex flex-wrap align-items-center justify-content-center gap-2">
+                      <span class="badge bg-light text-muted border fs-11">
+                        PNG, JPG, SVG, WebP
+                      </span>
+                      <span class="badge bg-light text-muted border fs-11">
+                        Max 2MB
+                      </span>
+                      <span class="badge bg-light text-muted border fs-11">
+                        Transparent Recommended
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Error Message if Any -->
+                <div v-if="logoFileError" class="alert alert-danger py-2 px-3 mt-2 mb-0 fs-12">
+                  <i class="ri-error-warning-line me-1"></i> {{ logoFileError }}
+                </div>
               </div>
 
               <div class="row g-3">
@@ -489,6 +621,29 @@
                     <option value="DD/MM/YYYY">DD/MM/YYYY (09/10/2026)</option>
                     <option value="MM/DD/YYYY">MM/DD/YYYY (10/09/2026)</option>
                   </select>
+                </div>
+
+                <div class="col-12 mt-4">
+                  <div class="border-top pt-3 mb-3">
+                    <h6 class="fw-bold mb-1"><i class="ri-layout-left-line text-primary me-1"></i> Login Banner</h6>
+                    <p class="text-muted fs-12 mb-0">Configure the public service message displayed beside the sign-in form.</p>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Operational Status</label>
+                  <input v-model="generalConfig.loginBanner.status" type="text" class="form-control" maxlength="100" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Banner Title</label>
+                  <input v-model="generalConfig.loginBanner.title" type="text" class="form-control" maxlength="100" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Highlight Text</label>
+                  <input v-model="generalConfig.loginBanner.highlight" type="text" class="form-control" maxlength="100" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Banner Description</label>
+                  <textarea v-model="generalConfig.loginBanner.description" class="form-control" rows="2" maxlength="300"></textarea>
                 </div>
 
                 <div class="col-12 mt-4">
@@ -807,6 +962,7 @@ import {
 
 const DEFAULT_GENERAL_CONFIG = {
   appName: "Velzon Support Portal",
+  systemLogo: null,
   companyName: "Enterprise Global Inc.",
   supportEmail: "support@enterprise.com",
   hotline: "+1 (800) 555-0199",
@@ -815,6 +971,12 @@ const DEFAULT_GENERAL_CONFIG = {
   maintenanceMode: false,
   footerCopyrightText: "{year} © {appName}.",
   footerCreditText: "Design & Develop by {companyName}",
+  loginBanner: {
+    status: "All support systems operational",
+    title: "One service desk.",
+    highlight: "Every team moving",
+    description: "Request the help you need, from software delivery and infrastructure to facilities care and repairs.",
+  },
 };
 
 export default {
@@ -840,6 +1002,9 @@ export default {
       checkboxBorderOptions: CHECKBOX_BORDER_OPTIONS,
 
       generalConfig: { ...DEFAULT_GENERAL_CONFIG },
+      layoutConfig: {},
+      logoDragOver: false,
+      logoFileError: "",
       loadingConfiguration: false,
       savingGeneral: false,
       savingTheme: false,
@@ -898,7 +1063,11 @@ export default {
   methods: {
     getAuthHeaders() {
       const token = localStorage.getItem("jwt") || localStorage.getItem("token");
-      return token ? { Authorization: `Bearer ${token}` } : {};
+      const headers = { Accept: "application/json" };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
     },
 
     handleThemeChanged(event) {
@@ -918,8 +1087,9 @@ export default {
         const configuration = response.data.data;
 
         this.generalConfig = this.mapGeneralConfiguration(configuration);
+        this.layoutConfig = configuration.layout_config || {};
         this.themeConfig = this.mapThemeConfiguration(configuration);
-        saveThemeConfig(this.themeConfig);
+        saveThemeConfig(this.themeConfig, false);
       } catch (error) {
         this.configurationSyncError = true;
         console.error("Failed to load system configuration:", error);
@@ -933,7 +1103,7 @@ export default {
       }
     },
 
-    async saveGeneralConfig() {
+    async saveGeneralConfig(isAutoSave = false) {
       this.savingGeneral = true;
       this.configurationSyncError = false;
 
@@ -944,13 +1114,17 @@ export default {
           { headers: this.getAuthHeaders() }
         );
         this.generalConfig = this.mapGeneralConfiguration(response.data.data);
+        this.layoutConfig = response.data.data.layout_config || {};
+        localStorage.setItem("velzon_system_general_config", JSON.stringify(response.data.data));
         window.dispatchEvent(
           new CustomEvent("system-configuration-updated", { detail: response.data.data })
         );
         Swal.fire({
           icon: "success",
-          title: "Settings Saved",
-          text: "General system information has been saved to the server.",
+          title: isAutoSave ? "Logo Saved" : "Settings Saved",
+          text: isAutoSave
+            ? "Your system logo has been updated and saved to the server."
+            : "General system information and logo have been saved to the server.",
           timer: 1800,
           showConfirmButton: false,
         });
@@ -966,23 +1140,115 @@ export default {
       }
     },
 
+    onLogoDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.logoDragOver = true;
+    },
+
+    onLogoDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.logoDragOver = false;
+    },
+
+    onLogoDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.logoDragOver = false;
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        this.processLogoFile(files[0]);
+      }
+    },
+
+    onLogoFileSelected(e) {
+      const files = e.target?.files;
+      if (files && files.length > 0) {
+        this.processLogoFile(files[0]);
+      }
+    },
+
+    triggerLogoFileInput() {
+      this.$refs.logoFileInput?.click();
+    },
+
+    async removeLogo() {
+      this.generalConfig.systemLogo = null;
+      this.logoFileError = "";
+      if (this.$refs.logoFileInput) {
+        this.$refs.logoFileInput.value = "";
+      }
+      const currentConfig = JSON.parse(localStorage.getItem("velzon_system_general_config") || "{}");
+      window.dispatchEvent(
+        new CustomEvent("system-configuration-updated", {
+          detail: { ...currentConfig, system_logo: null },
+        })
+      );
+      await this.saveGeneralConfig(true);
+    },
+
+    processLogoFile(file) {
+      this.logoFileError = "";
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        this.logoFileError = "Please select a valid image file (PNG, JPG, SVG, WebP).";
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid File Type",
+          text: "Only image files (PNG, JPG, SVG, WebP) are supported for the system logo.",
+        });
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        this.logoFileError = "File size exceeds 2MB limit. Please upload a smaller image.";
+        Swal.fire({
+          icon: "warning",
+          title: "File Too Large",
+          text: "Logo image must be smaller than 2MB.",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const result = event.target?.result;
+        if (result) {
+          this.generalConfig.systemLogo = result;
+          const currentConfig = JSON.parse(localStorage.getItem("velzon_system_general_config") || "{}");
+          window.dispatchEvent(
+            new CustomEvent("system-configuration-updated", {
+              detail: { ...currentConfig, system_logo: result },
+            })
+          );
+          await this.saveGeneralConfig(true);
+        }
+      };
+      reader.onerror = () => {
+        this.logoFileError = "Failed to read the image file.";
+      };
+      reader.readAsDataURL(file);
+    },
+
     setOption(key, value) {
       this.themeConfig[key] = value;
-      saveThemeConfig(this.themeConfig);
+      saveThemeConfig(this.themeConfig, false);
       this.queueThemeSave();
     },
 
     selectPreset(preset) {
       this.themeConfig.presetColor = preset.id;
       this.themeConfig.primaryColor = preset.hex;
-      saveThemeConfig(this.themeConfig);
+      saveThemeConfig(this.themeConfig, false);
       this.queueThemeSave();
     },
 
     onCustomColorChange(event) {
       this.themeConfig.presetColor = "custom";
       this.themeConfig.primaryColor = event.target.value.trim();
-      saveThemeConfig(this.themeConfig);
+      saveThemeConfig(this.themeConfig, false);
       this.queueThemeSave();
     },
 
@@ -1116,6 +1382,7 @@ export default {
     mapGeneralConfiguration(configuration) {
       return {
         appName: configuration.app_name,
+        systemLogo: configuration.system_logo || null,
         companyName: configuration.company_name,
         supportEmail: configuration.support_email,
         hotline: configuration.hotline,
@@ -1124,6 +1391,10 @@ export default {
         maintenanceMode: configuration.maintenance_mode,
         footerCopyrightText: configuration.footer_copyright_text,
         footerCreditText: configuration.footer_credit_text,
+        loginBanner: {
+          ...DEFAULT_GENERAL_CONFIG.loginBanner,
+          ...(configuration.layout_config?.login_banner || {}),
+        },
       };
     },
 
@@ -1147,6 +1418,7 @@ export default {
     generalConfigurationPayload() {
       return {
         app_name: this.generalConfig.appName,
+        system_logo: this.generalConfig.systemLogo || null,
         company_name: this.generalConfig.companyName,
         support_email: this.generalConfig.supportEmail,
         hotline: this.generalConfig.hotline,
@@ -1155,6 +1427,10 @@ export default {
         maintenance_mode: this.generalConfig.maintenanceMode,
         footer_copyright_text: this.generalConfig.footerCopyrightText,
         footer_credit_text: this.generalConfig.footerCreditText,
+        layout_config: {
+          ...this.layoutConfig,
+          login_banner: this.generalConfig.loginBanner,
+        },
       };
     },
 
@@ -1232,5 +1508,32 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.border-dashed {
+  border: 2px dashed var(--vz-border-color);
+  background-color: var(--vz-card-bg);
+}
+
+.logo-dropzone {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-dropzone:hover {
+  border-color: var(--vz-primary);
+  background-color: rgba(var(--vz-primary-rgb), 0.03);
+}
+
+.dropzone-active {
+  border-color: var(--vz-primary) !important;
+  background-color: rgba(var(--vz-primary-rgb), 0.08) !important;
+  transform: scale(1.01);
+}
+
+.has-logo-bg {
+  background-color: var(--vz-card-bg);
 }
 </style>

@@ -1,7 +1,6 @@
 <script>
 import {
   required,
-  email,
   helpers
 } from "@vuelidate/validators";
 
@@ -11,6 +10,7 @@ import {
   notificationMethods,
 } from "@/state/helpers";
 import { getFirebaseBackend } from "@/authUtils";
+import { getSystemLogo, getSystemConfiguration, fetchAndApplySystemConfiguration } from "@/helpers/themeConfig";
 
 export default {
   data() {
@@ -23,32 +23,64 @@ export default {
       isAuthError: false,
       processing: false,
       showPassword: false,
+      systemLogo: getSystemLogo(),
+      systemConfig: getSystemConfiguration(),
     };
   },
   validations: {
     email: {
-      required: helpers.withMessage("Email is required", required),
-      email: helpers.withMessage("Please enter valid email", email),
+      required: helpers.withMessage("Email or username is required", required),
     },
     password: {
       required: helpers.withMessage("Password is required", required),
     },
   },
   computed: {
-
+    appName() {
+      return this.systemConfig?.app_name || "Support Desk";
+    },
+    companyName() {
+      return this.systemConfig?.company_name || "COMPANY SERVICE PORTAL";
+    },
+    loginBanner() {
+      const banner = this.systemConfig?.layout_config?.login_banner || {};
+      return {
+        status: banner.status || "All support systems operational",
+        title: banner.title || "One service desk.",
+        highlight: banner.highlight || "Every team moving",
+        description: banner.description || "Request the help you need, from software delivery and infrastructure to facilities care and repairs.",
+      };
+    },
   },
-  mounted() {
+  async mounted() {
     document.documentElement.classList.add("support-login-active");
     document.body.classList.add("support-login-active");
+    this.systemLogo = getSystemLogo();
+    this.systemConfig = getSystemConfiguration();
+    window.addEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
+
+    const freshConfig = await fetchAndApplySystemConfiguration();
+    if (freshConfig) {
+      this.systemConfig = freshConfig;
+      this.systemLogo = freshConfig.system_logo || null;
+    }
   },
   beforeUnmount() {
     document.documentElement.classList.remove("support-login-active");
     document.body.classList.remove("support-login-active");
+    window.removeEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
   },
   methods: {
     ...authMethods,
     ...authFackMethods,
     ...notificationMethods,
+
+    handleSystemConfigUpdated(e) {
+      if (e?.detail) {
+        this.systemConfig = e.detail;
+        this.systemLogo = e.detail.system_logo || null;
+      }
+    },
 
     async signinapi() {
       if (!this.email || !this.password) {
@@ -124,38 +156,45 @@ export default {
 
     <section class="login-shell">
       <div class="story-panel">
-        <router-link to="/" class="brand" aria-label="AAI Support Desk home">
-          <img src="/aai_logo.png" alt="AAI" class="brand-logo" />
+        <router-link to="/" class="brand" :aria-label="appName + ' home'">
+          <img :src="systemLogo || '/aai_logo.png'" :alt="appName" class="brand-logo" />
           <span>
-            <strong>Support Desk</strong>
-            <small>COMPANY SERVICE PORTAL</small>
+            <strong>{{ appName }}</strong>
+            <small>{{ companyName }}</small>
           </span>
         </router-link>
 
         <div class="story-content">
           <div class="service-status">
             <span class="status-pulse"></span>
-            All support systems operational
+            {{ loginBanner.status }}
           </div>
 
-          <h1>Every request.<br /><span>One clear path</span> forward.</h1>
+          <h1>{{ loginBanner.title }}<br /><span>{{ loginBanner.highlight }}</span> forward.</h1>
           <p class="story-copy">
-            Connect your people with the right support team, track every conversation,
-            and keep work moving from one intelligent service desk.
+            {{ loginBanner.description }}
           </p>
 
-          <div class="support-features">
-            <div class="feature-item">
-              <span class="feature-icon"><i class="ri-ticket-2-line"></i></span>
-              <span><strong>Smart ticket routing</strong><small>Requests reach the right team faster</small></span>
+          <div class="service-catalog">
+            <div class="service-group">
+              <div class="service-group-title"><i class="ri-code-s-slash-line"></i> Technology support</div>
+              <div class="service-chips">
+                <span><i class="ri-code-box-line"></i> Software development</span>
+                <span><i class="ri-bug-line"></i> Bugs &amp; fixes</span>
+                <span><i class="ri-lightbulb-flash-line"></i> Innovation</span>
+                <span><i class="ri-refresh-line"></i> System enhancement</span>
+                <span><i class="ri-server-line"></i> Server maintenance</span>
+                <span><i class="ri-wifi-line"></i> Wi-Fi &amp; network</span>
+              </div>
             </div>
-            <div class="feature-item">
-              <span class="feature-icon"><i class="ri-discuss-line"></i></span>
-              <span><strong>Connected conversations</strong><small>Context stays with every request</small></span>
-            </div>
-            <div class="feature-item">
-              <span class="feature-icon"><i class="ri-line-chart-line"></i></span>
-              <span><strong>Clear service visibility</strong><small>Progress everyone can follow</small></span>
+            <div class="service-group">
+              <div class="service-group-title facilities"><i class="ri-building-2-line"></i> Facilities support</div>
+              <div class="service-chips">
+                <span><i class="ri-tools-line"></i> General repairs</span>
+                <span><i class="ri-brush-line"></i> Cleaning</span>
+                <span><i class="ri-drop-line"></i> Plumbing</span>
+                <span><i class="ri-temp-cold-line"></i> AC repair</span>
+              </div>
             </div>
           </div>
         </div>
@@ -165,8 +204,8 @@ export default {
       <div class="form-panel">
         <div class="form-panel-inner">
           <div class="mobile-brand">
-            <img src="/aai_logo.png" alt="AAI" class="brand-logo" />
-            <span><strong>Support Desk</strong><small>COMPANY SERVICE PORTAL</small></span>
+            <img :src="systemLogo || '/aai_logo.png'" :alt="appName" class="brand-logo" />
+            <span><strong>{{ appName }}</strong><small>{{ companyName }}</small></span>
           </div>
 
           <div class="secure-label"><i class="ri-shield-check-line"></i> Secure company portal</div>
@@ -177,10 +216,10 @@ export default {
 
           <form class="login-form" @submit.prevent="signinapi">
             <div class="field-group">
-              <label for="email">Work email</label>
+              <label for="email">Email or username</label>
               <div class="field-control">
-                <i class="ri-mail-line field-leading-icon"></i>
-                <input type="email" id="email" placeholder="name@company.com" v-model="email" autocomplete="email" />
+                <i class="ri-at-line field-leading-icon"></i>
+                <input type="text" id="email" placeholder="name@company.com or username" v-model="email" autocomplete="username" />
               </div>
             </div>
 
@@ -251,7 +290,7 @@ export default {
   overflow: hidden;
   display: grid;
   place-items: center;
-  padding: 36px;
+  padding: 0;
   background: #09090b;
   font-family: inherit;
 }
@@ -292,18 +331,14 @@ export default {
 .login-shell {
   position: relative;
   z-index: 1;
-  width: min(1180px, 100%);
-  height: min(720px, calc(100vh - 72px));
-  height: min(720px, calc(100svh - 72px));
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  height: 100svh;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(410px, 0.9fr);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 28px;
-  background: rgba(18, 18, 20, 0.9);
-  box-shadow: 0 36px 100px rgba(0, 0, 0, 0.46);
-  backdrop-filter: blur(20px);
 }
 
 .story-panel {
@@ -413,12 +448,20 @@ export default {
 }
 
 .story-copy {
-  max-width: 555px;
-  margin: 25px 0 30px;
+  max-width: 590px;
+  margin: 22px 0 26px;
   color: #b3b3ba;
   font-size: 15px;
   line-height: 1.75;
 }
+
+.service-catalog { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 630px; }
+.service-group { padding: 14px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 14px; background: rgba(255, 255, 255, .025); }
+.service-group-title { display: flex; align-items: center; gap: 7px; margin-bottom: 11px; color: #ff7478; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.service-group-title.facilities { color: #67d9c0; }
+.service-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.service-chips span { display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 6px; color: #d7d7dc; background: rgba(255, 255, 255, .06); font-size: 10px; line-height: 1.2; }
+.service-chips i { color: #ff7478; font-size: 12px; }.service-group:nth-child(2) .service-chips i { color: #67d9c0; }
 
 .support-features {
   display: grid;
@@ -735,13 +778,13 @@ export default {
 
 @media (max-width: 991.98px) {
   .support-login-page {
-    padding: 24px;
+    padding: 0;
   }
 
   .login-shell {
-    width: min(560px, 100%);
-    height: calc(100vh - 48px);
-    height: calc(100svh - 48px);
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
     min-height: auto;
     grid-template-columns: 1fr;
   }

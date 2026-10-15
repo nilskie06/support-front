@@ -2,8 +2,14 @@
 import NavBar from "@/components/nav-bar";
 import RightBar from "@/components/right-bar";
 import Footer from "@/components/footer";
+import { getSystemLogo } from "@/helpers/themeConfig";
 
 export default {
+  data() {
+    return {
+      systemLogo: getSystemLogo(),
+    };
+  },
   watch: {
     $route: {
       handler: "onRoutechange",
@@ -55,8 +61,14 @@ export default {
         }
       }, 1000);
     },
+    handleSystemConfigUpdated(event) {
+      if (event?.detail && event.detail.system_logo !== undefined) {
+        this.systemLogo = event.detail.system_logo || null;
+      }
+    },
   },
   mounted() {
+    window.addEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
     if (document.querySelectorAll(".navbar-nav .collapse")) {
       let collapses = document.querySelectorAll(".navbar-nav .collapse");
       collapses.forEach((collapse) => {
@@ -122,6 +134,9 @@ export default {
       });
     }
   },
+  unmounted() {
+    window.removeEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
+  },
   components: {
     NavBar,
     RightBar,
@@ -141,19 +156,23 @@ export default {
           <!-- Dark Logo-->
           <router-link to="/" class="logo logo-dark">
             <span class="logo-sm">
-              <img src="@/assets/images/logo-sm.png" alt="" height="22" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-sm" />
+              <img v-else src="@/assets/images/logo-sm.png" alt="" height="22" />
             </span>
             <span class="logo-lg">
-              <img src="@/assets/images/logo-dark.png" alt="" height="17" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-lg" />
+              <img v-else src="@/assets/images/logo-dark.png" alt="" height="17" />
             </span>
           </router-link>
           <!-- Light Logo-->
           <router-link to="/" class="logo logo-light">
             <span class="logo-sm">
-              <img src="@/assets/images/logo-sm.png" alt="" height="22" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-sm" />
+              <img v-else src="@/assets/images/logo-sm.png" alt="" height="22" />
             </span>
             <span class="logo-lg">
-              <img src="@/assets/images/logo-light.png" alt="" height="17" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-lg" />
+              <img v-else src="@/assets/images/logo-light.png" alt="" height="17" />
             </span>
           </router-link>
           <button type="button" class="

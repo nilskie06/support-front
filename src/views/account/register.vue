@@ -6,6 +6,7 @@ import {
 } from "@vuelidate/validators";
 import useVuelidate from "@vuelidate/core";
 import axios from 'axios';
+import { getSystemLogo, getSystemConfiguration } from "@/helpers/themeConfig";
 
 export default {
   setup() {
@@ -16,6 +17,8 @@ export default {
   components: {},
   data() {
     return {
+      systemLogo: getSystemLogo(),
+      systemConfig: getSystemConfiguration(),
       user: {
         username: "",
         email: "",
@@ -47,9 +50,16 @@ export default {
     },
   },
   computed: {
+    appName() {
+      return this.systemConfig?.app_name || "Support Desk";
+    },
     notification() {
       return this.$store ? this.$store.state.notification : null;
     },
+  },
+  mounted() {
+    this.systemLogo = getSystemLogo();
+    this.systemConfig = getSystemConfiguration();
   },
   methods: {
 
@@ -89,10 +99,11 @@ export default {
             <div class="text-center mt-sm-5 mb-4 text-white-50">
               <div>
                 <router-link to="/" class="d-inline-block auth-logo">
-                  <img src="@/assets/images/logo-light.png" alt="" height="20">
+                  <img v-if="systemLogo" :src="systemLogo" alt="System Logo" style="max-height: 48px; max-width: 220px; object-fit: contain;">
+                  <img v-else src="@/assets/images/logo-light.png" alt="" height="20">
                 </router-link>
               </div>
-              <p class="mt-3 fs-15 fw-medium">Premium Admin & Dashboard Template</p>
+              <p class="mt-3 fs-15 fw-medium text-white-50">{{ appName }}</p>
             </div>
           </BCol>
         </BRow>

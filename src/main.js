@@ -1,10 +1,18 @@
-import { createApp } from 'vue';
+import { createApp, defineAsyncComponent } from 'vue';
 import App from './App.vue';
 import router from "./router";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import i18n from './i18n';
 import store from "./state/store";
+
+// AG Grid and ApexCharts are large, so they load only on pages that render them
+const AgGridVue = defineAsyncComponent(() =>
+    import('@/helpers/agGrid').then(m => m.AgGridVue)
+);
+const ApexChart = defineAsyncComponent(() =>
+    import('vue3-apexcharts')
+);
 
 import VueSweetalert2 from 'vue-sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
@@ -49,11 +57,15 @@ AOS.init({
     duration: 1000
 });
 
-createApp(App)
+const app = createApp(App);
+
+app
     .use(store)
     .use(router)
     .use(VueApexCharts)
     .use(BootstrapVueNext)
+    .component('AgGridVue', AgGridVue)
+    .component('apexchart', ApexChart)
     .component(VueFeather.type, VueFeather)
     .directive("maska", vMaska)
     .use(i18n)

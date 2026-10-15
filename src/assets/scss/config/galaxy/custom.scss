@@ -787,3 +787,106 @@ textarea.form-control {
   padding: 14px;
 }
 
+/* ==========================================================================
+   Global Dark Mode Visibility Enhancements (Badges, Pills, Buttons)
+   ========================================================================== */
+[data-layout-mode="dark"],
+[data-bs-theme="dark"],
+html[data-layout-mode="dark"],
+html[data-bs-theme="dark"] {
+  /* Outline / Filter Pill Buttons */
+  .btn-outline-secondary {
+    color: #ced4da !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &.active {
+      color: #ffffff !important;
+      background-color: rgba(255, 255, 255, 0.14) !important;
+      border-color: rgba(255, 255, 255, 0.38) !important;
+    }
+  }
+
+  /* Badge and Pill Overrides */
+  .badge {
+    &.bg-primary-subtle,
+    &.bg-primary-subtle.text-primary {
+      background-color: rgba(64, 81, 137, 0.28) !important;
+      color: #9ab0ff !important;
+      border-color: rgba(64, 81, 137, 0.45) !important;
+    }
+
+    &.bg-success-subtle,
+    &.bg-success-subtle.text-success {
+      background-color: rgba(10, 179, 156, 0.22) !important;
+      color: #2fe4cb !important;
+      border-color: rgba(10, 179, 156, 0.45) !important;
+    }
+
+    &.bg-warning-subtle,
+    &.bg-warning-subtle.text-warning {
+      background-color: rgba(247, 184, 75, 0.22) !important;
+      color: #ffc86b !important;
+      border-color: rgba(247, 184, 75, 0.45) !important;
+    }
+
+    &.bg-info-subtle,
+    &.bg-info-subtle.text-info {
+      background-color: rgba(41, 156, 219, 0.22) !important;
+      color: #72d2fb !important;
+      border-color: rgba(41, 156, 219, 0.45) !important;
+    }
+
+    &.bg-secondary-subtle,
+    &.bg-secondary-subtle.text-secondary {
+      background-color: rgba(135, 138, 153, 0.22) !important;
+      color: #ced4da !important;
+      border-color: rgba(135, 138, 153, 0.45) !important;
+    }
+
+    &.bg-dark-subtle,
+    &.bg-light {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      color: #e9ecef !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    }
+
+    &.bg-dark-subtle.text-dark,
+    &.bg-light.text-dark,
+    &.text-dark,
+    &.bg-light.text-muted {
+      color: #e9ecef !important;
+    }
+
+    &.bg-dark {
+      background-color: #3b424a !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Custom Hex Sidebar Support
+   ========================================================================== */
+[data-sidebar-custom="true"] {
+  .navbar-menu,
+  .navbar-menu:hover {
+    background-color: var(--vz-vertical-menu-bg) !important;
+  }
+
+  .twocolumn-iconview {
+    background-color: var(--vz-twocolumn-menu-iconview-bg) !important;
+  }
+
+  &[data-sidebar-size="sm"] .navbar-brand-box {
+    background-color: var(--vz-vertical-menu-bg) !important;
+  }
+
+  &[data-layout-style="detached"] .navbar-menu {
+    border-right-color: var(--vz-vertical-menu-bg) !important;
+  }
+}

@@ -1,6 +1,13 @@
 <template>
   <Layout>
-    <PageHeader title="Menu Management" pageTitle="Configuration" />
+    <div v-if="!hasPermission" class="text-center py-5 my-5">
+      <div class="spinner-border text-primary avatar-sm mb-3" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <h6 class="fs-14 fw-semibold text-muted mb-0">Verifying permissions...</h6>
+    </div>
+    <div v-else>
+      <PageHeader title="Menu Management" pageTitle="Configuration" />
 
     <!-- Stat widgets -->
     <BRow class="mb-3">
@@ -76,7 +83,6 @@
           <div class="menu-toolbar-title">
             <div class="d-flex align-items-center gap-2">
               <h5 class="card-title mb-0">Menu Hierarchy</h5>
-              <span class="badge bg-primary-subtle text-primary">tkt_menus</span>
             </div>
             <span v-if="hasUnsavedChanges" class="badge bg-warning text-dark animate-pulse">
               <i class="ri-alert-line me-1"></i>Unsaved
@@ -142,7 +148,7 @@
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
-          <p class="text-muted mt-2 mb-0">Loading menu hierarchy from tkt_menus...</p>
+          <p class="text-muted mt-2 mb-0">Loading menu hierarchy...</p>
         </div>
 
         <!-- Empty state -->
@@ -154,7 +160,7 @@
           </div>
           <h5 class="fw-semibold">No Menus Found</h5>
           <p class="text-muted mb-3">
-            {{ searchQuery ? 'No menus match your search criteria.' : 'No menus currently exist in tkt_menus table.' }}
+            {{ searchQuery ? 'No menus match your search criteria.' : 'No menus have been created yet.' }}
           </p>
           <button type="button" class="btn btn-primary btn-sm" @click="openCreateModal(0)">
             <i class="ri-add-line me-1"></i> Create First Menu
@@ -388,6 +394,7 @@
       :current-icon="form.icon"
       @select="onIconSelected"
     />
+    </div>
   </Layout>
 </template>
 
@@ -408,6 +415,7 @@ export default {
   },
   data() {
     return {
+      hasPermission: true,
       menuTree: [],
       flatList: [],
       loading: false,
@@ -485,6 +493,38 @@ export default {
     },
   },
   mounted() {
+    // Component-level permission guard
+    const rawUser = sessionStorage.getItem("authUser") || localStorage.getItem("user");
+    if (rawUser) {
+      try {
+        const u = JSON.parse(rawUser);
+        if (u.role !== "admin") {
+          const rawPerms = sessionStorage.getItem("user_menu_permissions");
+          if (rawPerms) {
+            const perms = JSON.parse(rawPerms);
+            const menuEntry = perms.find(
+              (m) =>
+                m.code === "menu_management" ||
+                m.url === "/menu" ||
+                (m.url && m.url.toLowerCase().includes("/menu"))
+            );
+            if (!menuEntry || !menuEntry.can_view) {
+              this.hasPermission = false;
+              this.$nextTick(() => {
+                this.$router.replace({
+                  path: "/auth/403",
+                  query: { redirectFrom: this.$route.fullPath || "/settings/menus" },
+                });
+              });
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to check menu permissions:", e);
+      }
+    }
+
     this.fetchMenus();
   },
   methods: {
@@ -505,6 +545,16 @@ export default {
         this.initializeExpandedState();
       } catch (error) {
         console.error('Failed to fetch menus:', error);
+        if (error.response?.status === 403) {
+          this.hasPermission = false;
+          this.$nextTick(() => {
+            this.$router.replace({
+              path: '/auth/403',
+              query: { redirectFrom: this.$route.fullPath || '/settings/menus' },
+            });
+          });
+          return;
+        }
         this.showToast('Failed to load menus from server', 'error');
       } finally {
         this.loading = false;

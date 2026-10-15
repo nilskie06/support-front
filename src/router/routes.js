@@ -20,24 +20,24 @@ export default [
       },
     },
   },
-  {
-    path: "/register",
-    name: "Register",
-    component: () => import("../views/account/register.vue"),
-    meta: {
-      title: "Register",
-      beforeResolve(routeTo, routeFrom, next) {
-        // If the user is already logged in
-        if (store.getters["auth/loggedIn"]) {
-          // Redirect to the home page instead
-          next({ name: "default" });
-        } else {
-          // Continue to the login page
-          next();
-        }
-      },
-    },
-  },
+  // {
+  //   path: "/register",
+  //   name: "Register",
+  //   component: () => import("../views/account/register.vue"),
+  //   meta: {
+  //     title: "Register",
+  //     beforeResolve(routeTo, routeFrom, next) {
+  //       // If the user is already logged in
+  //       if (store.getters["auth/loggedIn"]) {
+  //         // Redirect to the home page instead
+  //         next({ name: "default" });
+  //       } else {
+  //         // Continue to the login page
+  //         next();
+  //       }
+  //     },
+  //   },
+  // },
   {
     path: "/forgot-password",
     name: "Forgot password",
@@ -58,6 +58,7 @@ export default [
   },
   {
     path: "/menu",
+    alias: ["/settings/menu", "/settings/menus"],
     name: "menu-management",
     meta: {
       title: "Menu Management",
@@ -76,13 +77,135 @@ export default [
     component: () => import("../views/system-configuration/index.vue"),
   },
   {
-    path: "/",
-    name: "default",
+    path: "/settings/board",
+    name: "settings-board",
     meta: {
-      title: "Dashboard",
+      title: "Board Management",
       authRequired: true,
     },
-    component: () => import("../views/dashboard/ecommerce/index.vue"),
+    component: () => import("../views/settings/board/index.vue"),
+  },
+  {
+    path: "/settings/issue-type",
+    name: "settings-issue-type",
+    meta: {
+      title: "Issue Types",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/issue-type/index.vue"),
+  },
+  {
+    path: "/settings/type",
+    alias: ["/settings/types"],
+    name: "settings-type",
+    meta: {
+      title: "Ticket Types",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/type/index.vue"),
+  },
+  {
+    path: "/settings/severities",
+    alias: ["/settings/severity", "/settings/issue-severities"],
+    name: "settings-severities",
+    meta: {
+      title: "Issue Severities",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/severities/index.vue"),
+  },
+  {
+    path: "/settings/company",
+    name: "settings-company",
+    meta: {
+      title: "Company Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/company/index.vue"),
+  },
+  {
+    path: "/settings/system",
+    name: "settings-system",
+    meta: {
+      title: "System Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/system/index.vue"),
+  },
+  {
+    path: "/settings/integration",
+    name: "settings-integration",
+    meta: { title: "Integration API" },
+    component: () => import("../views/settings/integration/index.vue"),
+  },
+  {
+    path: "/settings/department",
+    name: "settings-department",
+    meta: {
+      title: "Department Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/department/index.vue"),
+  },
+  {
+    path: "/settings/station",
+    name: "settings-station",
+    meta: {
+      title: "Station Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/station/index.vue"),
+  },
+  {
+    path: "/settings/users",
+    name: "settings-users",
+    meta: {
+      title: "User Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/users/index.vue"),
+  },
+  {
+    path: "/reports/general-report",
+    name: "reports-general",
+    meta: {
+      title: "General Report",
+      authRequired: true,
+    },
+    component: () => import("../views/reports/general-report/index.vue"),
+  },
+  {
+    path: "/settings/team",
+    name: "settings-team",
+    meta: {
+      title: "Team Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/team/index.vue"),
+  },
+  {
+    path: "/settings/roles",
+    name: "settings-roles",
+    meta: {
+      title: "Role & Permission Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/roles/index.vue"),
+  },
+  {
+    path: "/settings/permissions",
+    name: "settings-permissions",
+    meta: {
+      title: "Permission Management",
+      authRequired: true,
+    },
+    component: () => import("../views/settings/permissions/index.vue"),
+  },
+
+  {
+    path: "/",
+    name: "default",
+    redirect: { name: "dashboard-analytics" },
   },
   {
     path: "/dashboard/crypto",
@@ -145,9 +268,14 @@ export default [
     path: "/logout",
     name: "logout",
     meta: {
-      title: "Logout", authRequired: true,
+      title: "Logout",
       beforeResolve(routeTo, routeFrom, next) {
-        localStorage.clear();
+        store.commit("auth/SET_CURRENT_USER", null);
+        localStorage.removeItem("jwt");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userdata");
+        localStorage.removeItem("userid");
         sessionStorage.clear();
         next();
       },
@@ -293,14 +421,47 @@ export default [
     component: () => import("../views/apps/tasks/list-view"),
   },
   {
-    path: "/apps/tickets-details",
+    path: "/kanban",
+    alias: ["/tickets/kanban"],
+    name: "kanban-board",
+    meta: { title: "Kanban Board", authRequired: true },
+    component: () => import("../views/kanban/index.vue"),
+  },
+  {
+    path: "/tickets/list",
+    name: "tickets-list",
+    meta: { title: "Tickets List", authRequired: true },
+    component: () => import("../views/tickets/list"),
+  },
+  {
+    path: "/tickets/details",
     name: "tickets-details",
     meta: { title: "Ticket Details", authRequired: true },
     component: () => import("../views/tickets/details"),
   },
   {
+    path: "/tickets/new",
+    alias: ["/tickets/create"],
+    name: "tickets-new",
+    meta: { title: "Create Ticket", authRequired: true },
+    component: () => import("../views/tickets/form.vue"),
+  },
+  {
+    path: "/tickets/edit/:id?",
+    alias: ["/tickets/edit"],
+    name: "tickets-edit",
+    meta: { title: "Edit Ticket", authRequired: true },
+    component: () => import("../views/tickets/form.vue"),
+  },
+  {
+    path: "/apps/tickets-details",
+    name: "apps-tickets-details",
+    meta: { title: "Ticket Details", authRequired: true },
+    component: () => import("../views/tickets/details"),
+  },
+  {
     path: "/apps/tickets-list",
-    name: "tickets-list",
+    name: "apps-tickets-list",
     meta: { title: "Tickets List", authRequired: true },
     component: () => import("../views/tickets/list"),
   },
@@ -821,9 +982,10 @@ export default [
   },
   {
     path: "/pages/maintenance",
+    alias: ["/maintenance"],
     name: "maintenance",
-    meta: { title: "Maintanance", authRequired: true },
-    component: () => import("../views/pages/maintenance"),
+    meta: { title: "Site Maintenance", authRequired: false },
+    component: () => import("../views/pages/maintenance.vue"),
   },
   {
     path: "/pages/coming-soon",
@@ -1198,6 +1360,16 @@ export default [
     component: () => import('../views/auth/twostep/cover')
   },
   {
+    path: '/auth/403',
+    alias: ['/403', '/errors/403'],
+    name: '403',
+    meta: {
+      title: "403 Access Denied",
+      authRequired: true,
+    },
+    component: () => import('../views/auth/errors/403')
+  },
+  {
     path: '/auth/404',
     name: '404',
     meta: {
@@ -1282,5 +1454,14 @@ export default [
     name: "Leaflet Maps",
     meta: { title: "Leaflet Maps", authRequired: true },
     component: () => import("../views/maps/leaflet/index"),
+  },
+  {
+    path: "/:catchAll(.*)*",
+    name: "not-found",
+    meta: {
+      title: "Page Not Found",
+      authRequired: false,
+    },
+    component: () => import("../views/auth/errors/404-basic.vue"),
   },
 ];

@@ -1,0 +1,534 @@
+/* App-wide AG Grid look (every grid is wrapped by helpers/agGrid.js): a framed card with a
+   soft row-group bar, small uppercase headers, light rows, a pagination footer and a caption. */
+
+.app-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.app-grid__grid.ag-theme-alpine {
+}
+
+.app-grid__grid .ag-root-wrapper {
+  border-color: var(--vz-border-color, #e9ebf0);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  overflow: hidden;
+}
+
+/* "Drag here to set row groups" bar */
+.app-grid__grid .ag-column-drop-horizontal {
+  min-height: 44px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--vz-border-color, #e9ebf0);
+  background: #fafbfc;
+}
+
+.app-grid__grid .ag-column-drop-empty-message {
+  color: #5f6676;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.app-grid__grid .ag-column-drop-horizontal .ag-column-drop-icon {
+  color: #5f6676;
+}
+
+/* Column headers: small, uppercase, muted */
+.app-grid__grid .ag-header {
+  border-bottom-color: var(--vz-border-color, #e9ebf0);
+}
+
+.app-grid__grid .ag-header-cell-text {
+  color: #9aa1af;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.app-grid__grid .ag-header-cell:hover .ag-header-cell-text {
+  color: #5f6676;
+}
+
+/* Rows */
+.app-grid__grid .ag-row {
+  font-size: 13px;
+}
+
+/* AG Grid 36 renders pinned columns as sticky sections inside every row.
+   Keep those sections opaque so horizontally scrolling cells cannot paint
+   through them. Do not change AG Grid's native sticky positioning/z-index. */
+.ticket-grid .ag-row > .ag-grid-pinned-left-cells,
+.ticket-grid .ag-row > .ag-grid-pinned-right-cells,
+.ticket-grid .ag-row > .ag-grid-pinned-left-cells > .ag-grid-container-wrapper,
+.ticket-grid .ag-row > .ag-grid-pinned-right-cells > .ag-grid-container-wrapper {
+  background-color: #fff !important;
+  background-image: linear-gradient(#fff, #fff) !important;
+  opacity: 1 !important;
+}
+
+/* Compact table presentation */
+.app-grid__grid .ag-header-cell,
+.report-grid .ag-header-cell {
+  font-weight: 700;
+}
+
+.app-grid__grid .ag-header-cell:not(:last-child),
+.report-grid .ag-header-cell:not(:last-child) {
+  border-right: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.app-grid__grid .ag-row,
+.report-grid .ag-row {
+  transition: background-color 120ms ease;
+}
+
+.app-grid__grid .ag-row-selected,
+.report-grid .ag-row-selected {
+  background-color: rgba(13, 110, 175, 0.16) !important;
+}
+
+.app-grid__grid .ag-body-horizontal-scroll,
+.report-grid .ag-body-horizontal-scroll {
+  min-height: 14px;
+}
+
+.app-grid__grid .ag-body-horizontal-scroll-viewport,
+.report-grid .ag-body-horizontal-scroll-viewport {
+  scrollbar-width: thin;
+}
+
+/* Pagination footer */
+.app-grid__grid .ag-paging-panel {
+  height: 48px;
+  padding: 0 14px;
+  border-top: 1px solid var(--vz-border-color, #e9ebf0);
+  background: #fafbfc;
+  color: #5f6676;
+  font-size: 13px;
+}
+
+.app-grid__grid .ag-paging-panel > span {
+  margin: 0 10px;
+}
+
+.app-grid__grid .ag-paging-number,
+.app-grid__grid .ag-paging-row-summary-panel-number {
+  color: var(--vz-body-color, #212529);
+  font-weight: 700;
+}
+
+.app-grid__grid .ag-paging-button {
+  padding: 4px;
+  border-radius: 6px;
+  color: #3d4250;
+}
+
+.app-grid__grid .ag-paging-button:not(.ag-disabled):hover {
+  background: rgba(246, 146, 30, 0.12);
+  color: #dc7b0c;
+}
+
+.app-grid__grid .ag-paging-page-size .ag-picker-field-wrapper {
+  min-width: 52px;
+  height: 28px;
+  border-color: #e3e6ec;
+  border-radius: 6px;
+  background: var(--vz-card-bg, #fff);
+}
+
+/* Empty / loading card */
+.app-grid__grid .ag-overlay-no-rows-wrapper,
+.app-grid__grid .ag-overlay-loading-wrapper {
+  background: transparent;
+}
+
+.app-grid-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 260px;
+  padding: 1.5rem 2.25rem;
+  border: 1px solid #eceef2;
+  border-radius: 14px;
+  background: var(--vz-card-bg, #fff);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+  color: #3d4250;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app-grid-empty i {
+  color: #b7bdc8;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.app-grid-empty.is-loading {
+  flex-direction: row;
+  color: #5f6676;
+  font-weight: 500;
+}
+
+.app-grid-empty.is-loading .spinner-border {
+  color: #f6921e;
+}
+
+/* Filter menus must remain opaque and keep long values on one readable line.
+   Without this, the application form styles can make the popup translucent
+   and AG Grid's virtual rows can overlap wrapped labels. */
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-popup,
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-popup-child,
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-menu,
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-filter,
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-set-filter {
+  z-index: 1000;
+  opacity: 1;
+  isolation: isolate;
+  background: var(--vz-card-bg, #fff);
+  color: var(--vz-body-color, #212529);
+}
+
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-set-filter-list,
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-virtual-list-item {
+  background: var(--vz-card-bg, #fff);
+}
+
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-virtual-list-item {
+  min-height: 28px;
+  line-height: 28px;
+  white-space: nowrap;
+}
+
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-set-filter-item-text,
+:where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-virtual-list-item-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* AG Grid tool menus are rendered in a popup layer outside the grid root.
+   Keep the layer opaque so scrolled rows cannot show through it. */
+.ag-popup-child,
+.ag-popup-child .ag-menu,
+.ag-popup-child .ag-filter,
+.ag-popup-child .ag-set-filter,
+.ag-popup-child .ag-menu-list,
+.ag-popup-child .ag-virtual-list-container {
+  z-index: 1000;
+  opacity: 1 !important;
+  background-color: var(--vz-card-bg, #fff) !important;
+  background-image: none !important;
+  isolation: isolate;
+}
+
+.ag-popup-child .ag-menu-option,
+.ag-popup-child .ag-menu-option-text,
+.ag-popup-child .ag-set-filter-item,
+.ag-popup-child .ag-virtual-list-item {
+  opacity: 1 !important;
+  white-space: nowrap;
+}
+
+.ag-popup-child .ag-menu-option-text,
+.ag-popup-child .ag-set-filter-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Column tool menu: make every menu layer opaque, including the option rows. */
+html:not([data-bs-theme="dark"]) .ag-menu,
+html:not([data-bs-theme="dark"]) .ag-menu-list,
+html:not([data-bs-theme="dark"]) .ag-menu-option,
+html:not([data-bs-theme="dark"]) .ag-menu-separator {
+  opacity: 1 !important;
+  background: #fff !important;
+  background-color: #fff !important;
+  background-image: none !important;
+}
+
+html:not([data-bs-theme="dark"]) .ag-menu-option-text,
+html:not([data-bs-theme="dark"]) .ag-menu-option-icon,
+html:not([data-bs-theme="dark"]) .ag-menu-option-popup-pointer {
+  opacity: 1 !important;
+  background-color: #fff !important;
+}
+
+[data-bs-theme="dark"] .ag-menu,
+[data-bs-theme="dark"] .ag-menu-list,
+[data-bs-theme="dark"] .ag-menu-option,
+[data-bs-theme="dark"] .ag-menu-separator {
+  opacity: 1 !important;
+  background: #273445 !important;
+  background-color: #273445 !important;
+  background-image: none !important;
+}
+
+/* Choose Columns panel */
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select-header,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select-header-filter-wrapper,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select-list,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select-column,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select-column-group,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-virtual-list-container,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-virtual-list-viewport {
+  opacity: 1 !important;
+  background: #fff !important;
+  background-color: #fff !important;
+  background-image: none !important;
+}
+
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select-column,
+html:not([data-bs-theme="dark"]) .ag-popup-child .ag-column-select-column-group {
+  min-height: 28px;
+  line-height: 28px;
+}
+
+[data-bs-theme="dark"] .ag-popup-child .ag-column-select,
+[data-bs-theme="dark"] .ag-popup-child .ag-column-select-header,
+[data-bs-theme="dark"] .ag-popup-child .ag-column-select-header-filter-wrapper,
+[data-bs-theme="dark"] .ag-popup-child .ag-column-select-list,
+[data-bs-theme="dark"] .ag-popup-child .ag-column-select-column,
+[data-bs-theme="dark"] .ag-popup-child .ag-column-select-column-group,
+[data-bs-theme="dark"] .ag-popup-child .ag-virtual-list-container,
+[data-bs-theme="dark"] .ag-popup-child .ag-virtual-list-viewport {
+  opacity: 1 !important;
+  background: #273445 !important;
+  background-color: #273445 !important;
+  background-image: none !important;
+}
+
+/* Keep the header opaque without changing AG Grid's native layout or scroll
+   geometry. The grid controls its own header height and positioning. */
+.ag-header,
+.ag-header-viewport,
+.ag-header-container,
+.ag-header-row,
+.ag-header-cell,
+.ag-header-cell-comp-wrapper,
+.ag-header-cell-label {
+  background-color: var(--vz-card-bg, #fff) !important;
+  background-image: none !important;
+  opacity: 1 !important;
+}
+
+/* In light mode the default card variable can be transparent in some layout
+   variants. Use a solid header and keep it above the scrolling row viewport. */
+html:not([data-bs-theme="dark"]) .ag-header,
+html:not([data-bs-theme="dark"]) .ag-header-viewport,
+html:not([data-bs-theme="dark"]) .ag-header-container,
+html:not([data-bs-theme="dark"]) .ag-header-row,
+html:not([data-bs-theme="dark"]) .ag-header-cell,
+html:not([data-bs-theme="dark"]) .ag-header-cell-comp-wrapper,
+html:not([data-bs-theme="dark"]) .ag-header-cell-label {
+  background: #fff !important;
+  background-color: #fff !important;
+  background-image: none !important;
+  opacity: 1 !important;
+}
+
+html:not([data-bs-theme="dark"]) .ag-center-cols-viewport,
+html:not([data-bs-theme="dark"]) .ag-body-viewport {
+  position: relative;
+  z-index: 1;
+}
+
+/* Pinned columns are separate AG Grid layers. Give the entire pane (not only
+   its cells) an opaque surface; otherwise the translated centre cells can be
+   seen through a pinned column while horizontally scrolling. */
+html:not([data-bs-theme="dark"]) .ag-pinned-left-header,
+html:not([data-bs-theme="dark"]) .ag-pinned-right-header,
+html:not([data-bs-theme="dark"]) .ag-pinned-left-cols-viewport,
+html:not([data-bs-theme="dark"]) .ag-pinned-right-cols-viewport,
+html:not([data-bs-theme="dark"]) .ag-pinned-left-cols-container,
+html:not([data-bs-theme="dark"]) .ag-pinned-right-cols-container,
+html:not([data-bs-theme="dark"]) .ag-pinned-left-header .ag-header-cell,
+html:not([data-bs-theme="dark"]) .ag-pinned-right-header .ag-header-cell,
+html:not([data-bs-theme="dark"]) .ag-pinned-left-cols-container .ag-cell,
+html:not([data-bs-theme="dark"]) .ag-pinned-right-cols-container .ag-cell {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  opacity: 1 !important;
+}
+
+.ag-pinned-left-header,
+.ag-pinned-right-header,
+.ag-pinned-left-cols-viewport,
+.ag-pinned-right-cols-viewport,
+.ag-pinned-left-cols-container,
+.ag-pinned-right-cols-container {
+  isolation: isolate;
+  z-index: 5 !important;
+}
+
+[data-bs-theme="dark"] .ag-pinned-left-header,
+[data-bs-theme="dark"] .ag-pinned-right-header,
+[data-bs-theme="dark"] .ag-pinned-left-cols-viewport,
+[data-bs-theme="dark"] .ag-pinned-right-cols-viewport,
+[data-bs-theme="dark"] .ag-pinned-left-cols-container,
+[data-bs-theme="dark"] .ag-pinned-right-cols-container,
+[data-bs-theme="dark"] .ag-pinned-left-header .ag-header-cell,
+[data-bs-theme="dark"] .ag-pinned-right-header .ag-header-cell,
+[data-bs-theme="dark"] .ag-pinned-left-cols-container .ag-cell,
+[data-bs-theme="dark"] .ag-pinned-right-cols-container .ag-cell {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+  background-image: none !important;
+  opacity: 1 !important;
+}
+
+/* "12 users loaded" */
+.app-grid__caption {
+  min-height: 1rem;
+  color: #8a91a0;
+  font-size: 12px;
+  text-align: right;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] .app-grid__grid.ag-theme-alpine {
+  color-scheme: dark;
+}
+
+/* Screenshot-matched dark table palette. */
+[data-bs-theme="dark"] .app-grid__grid,
+[data-bs-theme="dark"] .report-grid {
+  color: #f1f5f9;
+  background: #1d2938;
+  border-color: #334155;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-root-wrapper,
+[data-bs-theme="dark"] .report-grid .ag-root-wrapper {
+  border-color: #334155;
+  background: #1d2938;
+  box-shadow: none;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-header,
+[data-bs-theme="dark"] .app-grid__grid .ag-header-viewport,
+[data-bs-theme="dark"] .app-grid__grid .ag-header-container,
+[data-bs-theme="dark"] .app-grid__grid .ag-header-row,
+[data-bs-theme="dark"] .app-grid__grid .ag-header-cell,
+[data-bs-theme="dark"] .report-grid .ag-header,
+[data-bs-theme="dark"] .report-grid .ag-header-viewport,
+[data-bs-theme="dark"] .report-grid .ag-header-container,
+[data-bs-theme="dark"] .report-grid .ag-header-row,
+[data-bs-theme="dark"] .report-grid .ag-header-cell {
+  background: #273445 !important;
+  border-color: #3b4a5d;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-header-cell-text,
+[data-bs-theme="dark"] .report-grid .ag-header-cell-text {
+  color: #f8fafc !important;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-center-cols-viewport,
+[data-bs-theme="dark"] .app-grid__grid .ag-center-cols-container,
+[data-bs-theme="dark"] .app-grid__grid .ag-body-viewport,
+[data-bs-theme="dark"] .report-grid .ag-center-cols-viewport,
+[data-bs-theme="dark"] .report-grid .ag-center-cols-container,
+[data-bs-theme="dark"] .report-grid .ag-body-viewport {
+  background: #1d2938;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-row,
+[data-bs-theme="dark"] .report-grid .ag-row {
+  background: #1d2938;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-row-hover,
+[data-bs-theme="dark"] .report-grid .ag-row-hover {
+  background: #223b53 !important;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-row-selected,
+[data-bs-theme="dark"] .report-grid .ag-row-selected {
+  background: #24425e !important;
+}
+
+[data-bs-theme="dark"] .ticket-grid .ag-row > .ag-grid-pinned-left-cells,
+[data-bs-theme="dark"] .ticket-grid .ag-row > .ag-grid-pinned-right-cells,
+[data-bs-theme="dark"] .ticket-grid .ag-row > .ag-grid-pinned-left-cells > .ag-grid-container-wrapper,
+[data-bs-theme="dark"] .ticket-grid .ag-row > .ag-grid-pinned-right-cells > .ag-grid-container-wrapper {
+  background-color: #1d2938 !important;
+  background-image: linear-gradient(#1d2938, #1d2938) !important;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-cell,
+[data-bs-theme="dark"] .report-grid .ag-cell {
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-body-horizontal-scroll-viewport,
+[data-bs-theme="dark"] .report-grid .ag-body-horizontal-scroll-viewport {
+  background: #182230;
+  scrollbar-color: #8b9198 #273445;
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-column-drop-horizontal,
+[data-bs-theme="dark"] .app-grid__grid .ag-paging-panel {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-bs-theme="dark"] .app-grid__grid .ag-column-drop-empty-message,
+[data-bs-theme="dark"] .app-grid__grid .ag-paging-panel,
+[data-bs-theme="dark"] .app-grid__grid .ag-paging-button,
+[data-bs-theme="dark"] .app-grid-empty {
+  color: var(--vz-body-color);
+}
+
+[data-bs-theme="dark"] .app-grid-empty {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] :where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-popup,
+[data-bs-theme="dark"] :where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-popup-child,
+[data-bs-theme="dark"] :where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-menu,
+[data-bs-theme="dark"] :where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-filter,
+[data-bs-theme="dark"] :where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-set-filter,
+[data-bs-theme="dark"] :where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-set-filter-list,
+[data-bs-theme="dark"] :where(.ag-theme-quartz, .ag-theme-alpine, .report-grid, .app-grid__grid) .ag-virtual-list-item {
+  background: var(--vz-card-bg, #1f2429);
+  color: var(--vz-body-color, #dee2e6);
+}
+
+[data-bs-theme="dark"] .ag-popup-child,
+[data-bs-theme="dark"] .ag-popup-child .ag-menu,
+[data-bs-theme="dark"] .ag-popup-child .ag-filter,
+[data-bs-theme="dark"] .ag-popup-child .ag-set-filter,
+[data-bs-theme="dark"] .ag-popup-child .ag-menu-list,
+[data-bs-theme="dark"] .ag-popup-child .ag-virtual-list-container,
+[data-bs-theme="dark"] .ag-header,
+[data-bs-theme="dark"] .ag-header-viewport,
+[data-bs-theme="dark"] .ag-header-container,
+[data-bs-theme="dark"] .ag-header-row,
+[data-bs-theme="dark"] .ag-header-cell,
+[data-bs-theme="dark"] .ag-header-cell-comp-wrapper,
+[data-bs-theme="dark"] .ag-header-cell-label {
+  background: var(--vz-card-bg, #1f2429) !important;
+}
+
+[data-bs-theme="dark"] .ag-header,
+[data-bs-theme="dark"] .ag-header-viewport,
+[data-bs-theme="dark"] .ag-header-container,
+[data-bs-theme="dark"] .ag-header-row,
+[data-bs-theme="dark"] .ag-header-cell,
+[data-bs-theme="dark"] .ag-header-cell-comp-wrapper,
+[data-bs-theme="dark"] .ag-header-cell-label {
+  background-color: var(--vz-card-bg, #1f2429) !important;
+  background-image: none !important;
+}

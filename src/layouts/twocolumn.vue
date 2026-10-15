@@ -9,6 +9,7 @@ import Menu from "@/components/menu.vue";
 import NavBar from "@/components/nav-bar";
 import RightBar from "@/components/right-bar";
 import Footer from "@/components/footer";
+import { getSystemLogo } from "@/helpers/themeConfig";
 
 /**
  * Vertical layout
@@ -24,6 +25,7 @@ export default {
   data() {
     return {
       isMenuCondensed: false,
+      systemLogo: getSystemLogo(),
       rmenu: localStorage.getItem('rmenu') ? localStorage.getItem('rmenu') : 'twocolumn',
     };
   },
@@ -167,9 +169,15 @@ export default {
     hideRightSidebar() {
       document.body.classList.remove("right-bar-enabled");
     },
+    handleSystemConfigUpdated(event) {
+      if (event?.detail && event.detail.system_logo !== undefined) {
+        this.systemLogo = event.detail.system_logo || null;
+      }
+    },
   },
 
   mounted() {
+    window.addEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
     this.initActiveMenu();
     if (this.rmenu == 'vertical' && this.layoutType == 'twocolumn') {
       document.documentElement.setAttribute("data-layout", "vertical");
@@ -263,7 +271,9 @@ export default {
         });
       });
     }
-
+  },
+  unmounted() {
+    window.removeEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
   },
 };
 </script>
@@ -280,19 +290,23 @@ export default {
           <!-- Dark Logo-->
           <router-link to="/" class="logo logo-dark">
             <span class="logo-sm">
-              <img src="@/assets/images/logo-sm.png" alt="" height="22" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-sm" />
+              <img v-else src="@/assets/images/logo-sm.png" alt="" height="22" />
             </span>
             <span class="logo-lg">
-              <img src="@/assets/images/logo-dark.png" alt="" height="17" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-lg" />
+              <img v-else src="@/assets/images/logo-dark.png" alt="" height="17" />
             </span>
           </router-link>
           <!-- Light Logo-->
           <router-link to="/" class="logo logo-light">
             <span class="logo-sm">
-              <img src="@/assets/images/logo-sm.png" alt="" height="22" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-sm" />
+              <img v-else src="@/assets/images/logo-sm.png" alt="" height="22" />
             </span>
             <span class="logo-lg">
-              <img src="@/assets/images/logo-light.png" alt="" height="17" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-lg" />
+              <img v-else src="@/assets/images/logo-light.png" alt="" height="17" />
             </span>
           </router-link>
           <button type="button" class=" btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
@@ -305,7 +319,10 @@ export default {
           <BContainer fluid>
             <div id="two-column-menu">
               <simplebar class="twocolumn-iconview list-unstyled">
-                <a class="logo"><img src="@/assets/images/logo-sm.png" alt="Logo" height="22" /></a>
+                <a class="logo">
+                  <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-sm" />
+                  <img v-else src="@/assets/images/logo-sm.png" alt="Logo" height="22" />
+                </a>
                 <li>
                   <a href="#sidebarDashboards" class="nav-icon" role="button"
                     @click.prevent="updateMenu('sidebarDashboards', $event)">

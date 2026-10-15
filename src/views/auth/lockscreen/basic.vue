@@ -1,78 +1,72 @@
 <script>
-export default {
+import axios from 'axios';
 
+export default {
+  data() {
+    return { password: '', currentUser: null, error: '', unlocking: false };
+  },
+  computed: {
+    name() { return this.currentUser?.fullname || this.currentUser?.name || this.currentUser?.email || 'User'; },
+    initials() { return this.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase(); },
+  },
+  mounted() {
+    try { this.currentUser = JSON.parse(sessionStorage.getItem('authUser') || localStorage.getItem('user') || 'null'); } catch (error) { this.currentUser = null; }
+  },
+  methods: {
+    async unlock() {
+      if (!this.password) { this.error = 'Password is required.'; return; }
+      this.unlocking = true; this.error = '';
+      try {
+        const token = localStorage.getItem('jwt') || localStorage.getItem('token');
+        await axios.post(`${process.env.VUE_APP_AUTHDOMAIN || 'http://localhost:8001/api'}/user/unlock`, { password: this.password }, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        this.$router.push('/');
+      } catch (error) {
+        this.error = error.response?.data?.errors?.password?.[0] || error.response?.data?.message || 'Unable to unlock the screen.';
+      } finally { this.unlocking = false; }
+    },
+  },
 };
 </script>
 
 <template>
-  <div class="auth-page-wrapper pt-5">
-
-    <div class="auth-page-content">
-      <BContainer>
-        <BRow>
-          <BCol lg="12">
-            <div class="text-center mt-sm-5 mb-4 text-white-50">
-              <div>
-                <router-link to="/" class="d-inline-block auth-logo">
-                  <img src="@/assets/images/logo-light.png" alt="" height="20">
-                </router-link>
-              </div>
-              <p class="mt-3 fs-15 fw-medium">Premium Admin & Dashboard Template</p>
-            </div>
-          </BCol>
-        </BRow>
-
-        <BRow class="justify-content-center">
-          <BCol md="8" lg="6" xl="5">
-            <BCard no-body class="mt-4 card-bg-fill">
-
-              <BCardBody class="p-4">
-                <div class="text-center mt-2">
-                  <h5 class="text-primary">Lock Screen</h5>
-                  <p class="text-muted">Enter your password to unlock the screen!</p>
-                </div>
-                <div class="user-thumb text-center">
-                  <img src="@/assets/images/users/avatar-1.jpg" class="rounded-circle img-thumbnail avatar-lg"
-                    alt="thumbnail">
-                  <h5 class="font-size-15 mt-3">Anna Adame</h5>
-                </div>
-                <div class="p-2 mt-4">
-                  <form>
-                    <div class="mb-3">
-                      <label class="form-label" for="userpassword">Password</label>
-                      <input type="password" class="form-control" id="userpassword" placeholder="Enter password" required>
-                    </div>
-                    <div class="mb-2 mt-4">
-                      <BButton variant="primary" class="w-100" type="submit">Unlock</BButton>
-                    </div>
-                  </form>
-
-                </div>
-              </BCardBody>
-            </BCard>
-
-            <div class="mt-4 text-center">
-              <p class="mb-0">Not you ? return <router-link to="/auth/signin-basic"
-                  class="fw-semibold text-primary text-decoration-underline"> Signin </router-link>
-              </p>
-            </div>
-
-          </BCol>
-        </BRow>
-      </BContainer>
-    </div>
-
-    <footer class="footer">
-      <BContainer>
-        <BRow>
-          <BCol lg="12">
-            <div class="text-center">
-              <p class="mb-0 text-muted">&copy; {{ new Date().getFullYear() }} Velzon. Crafted with <i
-                  class="mdi mdi-heart text-danger"></i> by Themesbrand</p>
-            </div>
-          </BCol>
-        </BRow>
-      </BContainer>
-    </footer>
+  <div class="auth-page-wrapper min-vh-100 d-flex align-items-center">
+    <div class="lock-grid"></div>
+    <div class="lock-ambient lock-ambient-one"></div>
+    <div class="lock-ambient lock-ambient-two"></div>
+    <BContainer>
+      <BRow class="justify-content-center">
+        <BCol md="7" lg="5" xl="4">
+          <BCard no-body class="border-0 shadow-sm lock-card">
+            <BCardBody class="p-4 p-sm-5 text-center">
+              <span class="avatar-lg mb-3 d-inline-flex"><span class="avatar-title rounded-circle bg-primary-subtle text-primary fs-4">{{ initials }}</span></span>
+              <h4 class="mb-1">{{ name }}</h4>
+              <p class="text-muted mb-4">Screen is locked</p>
+              <form @submit.prevent="unlock">
+                <label class="form-label text-start d-block" for="userpassword">Password</label>
+                <input id="userpassword" v-model="password" type="password" class="form-control" :class="{ 'is-invalid': error }" autocomplete="current-password" placeholder="Enter password" required @input="error = ''">
+                <div v-if="error" class="invalid-feedback d-block text-start">{{ error }}</div>
+                <BButton variant="primary" class="w-100 mt-3" type="submit" :disabled="unlocking"><span v-if="unlocking" class="spinner-border spinner-border-sm me-1"></span><i v-else class="ri-lock-unlock-line me-1"></i>{{ unlocking ? 'Unlocking...' : 'Unlock' }}</BButton>
+              </form>
+              <router-link to="/logout" class="btn btn-link text-muted mt-3">Sign in as another user</router-link>
+            </BCardBody>
+          </BCard>
+        </BCol>
+      </BRow>
+    </BContainer>
   </div>
 </template>
+
+<style scoped>
+.auth-page-wrapper { position: relative; overflow: hidden; background: #09090b; }
+.auth-page-wrapper :deep(.container) { position: relative; z-index: 1; }
+.lock-grid { position: absolute; inset: 0; opacity: .13; background-image: linear-gradient(rgba(211, 29, 35, .18) 1px, transparent 1px), linear-gradient(90deg, rgba(211, 29, 35, .18) 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to right, black, transparent 72%); }
+.lock-ambient { position: absolute; border-radius: 50%; filter: blur(12px); pointer-events: none; }
+.lock-ambient-one { top: -220px; left: -130px; width: 520px; height: 520px; background: radial-gradient(circle, rgba(209, 10, 17, .24), transparent 68%); }
+.lock-ambient-two { right: -280px; bottom: -320px; width: 620px; height: 620px; background: radial-gradient(circle, rgba(145, 10, 15, .24), transparent 68%); }
+.lock-card { background: #f8fafc; color: #1e293b; }
+.lock-card :deep(.form-label), .lock-card :deep(h4) { color: #1e293b; }
+.lock-card :deep(.text-muted) { color: #64748b !important; }
+.lock-card :deep(.form-control) { background: #fff; color: #0f172a; border-color: #cbd5e1; }
+.lock-card :deep(.form-control::placeholder) { color: #94a3b8; opacity: 1; }
+.lock-card :deep(.form-control:focus) { background: #fff; color: #0f172a; border-color: var(--vz-primary, #405189); box-shadow: 0 0 0 .2rem rgba(64, 81, 137, .15); }
+</style>

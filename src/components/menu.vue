@@ -33,7 +33,9 @@ export default {
   },
   mounted() {
     // 1. Instantly load cached menus if available to avoid layout shift
-    const cached = localStorage.getItem("app_sidebar_menus");
+    const userId = localStorage.getItem("userid");
+    const userCacheKey = userId ? `app_sidebar_menus_${userId}` : "app_sidebar_menus";
+    const cached = localStorage.getItem(userCacheKey) || localStorage.getItem("app_sidebar_menus");
     if (cached) {
       try {
         this.menuList = JSON.parse(cached);
@@ -46,10 +48,10 @@ export default {
       }
     }
 
-    // 2. Fetch live menus from tkt_menus table
+    // 2. Fetch live user access menus
     this.fetchMenus();
 
-    // 3. Listen for changes saved in /menu management page
+    // 3. Listen for changes saved in /menu, /settings/users, or /settings/roles
     window.addEventListener("menus-updated", this.fetchMenus);
 
     if (this.rmenu === "vertical" && this.layoutType === "twocolumn") {
@@ -96,7 +98,17 @@ export default {
     filterSidebarMenus(list) {
       if (!Array.isArray(list)) return [];
       return list
-        .filter((item) => Boolean(item.status) && Boolean(item.is_side_menu))
+        .filter((item) => {
+          // Status must be active and set as a side menu
+          const isStatusActive = item.status === undefined || Boolean(item.status);
+          const isSideMenu = item.is_side_menu === undefined || Boolean(item.is_side_menu);
+          if (!isStatusActive || !isSideMenu) return false;
+
+          // Check user access permission: if can_view is explicitly present and false, hide
+          if (item.can_view !== undefined && !item.can_view) return false;
+
+          return true;
+        })
         .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0))
         .map((item) => {
           const rawChildren = item.all_children || item.children || [];
@@ -104,18 +116,52 @@ export default {
             ...item,
             children: this.filterSidebarMenus(rawChildren),
           };
+        })
+        .filter((item) => {
+          // If this is a dropdown container with '#' or empty URL and has no accessible children remaining, hide it
+          const isDropdownContainer = !item.url || item.url === "#" || item.url === "javascript:void(0);";
+          const hasChildren = item.children && item.children.length > 0;
+          if (isDropdownContainer && !hasChildren) {
+            return false;
+          }
+          return true;
         });
     },
 
     async fetchMenus() {
       this.loading = true;
       try {
-        const response = await axios.get(`${this.apiBase}/menus`, {
-          headers: this.getAuthHeaders(),
-        });
-        const tree = response.data.data || [];
+        const token = localStorage.getItem("jwt") || localStorage.getItem("token");
+        const headers = this.getAuthHeaders();
+        let tree = [];
+
+        // If user is authenticated, load their specific accessible menu tree
+        if (token) {
+          try {
+            const res = await axios.get(`${this.apiBase}/user/menu-access`, { headers });
+            if (res.data && res.data.menu_tree) {
+              tree = res.data.menu_tree;
+            }
+            if (res.data && res.data.menus) {
+              sessionStorage.setItem("user_menu_permissions", JSON.stringify(res.data.menus));
+            }
+          } catch (accessErr) {
+            console.warn("Could not fetch user-specific menu access, falling back to /menus:", accessErr);
+          }
+        }
+
+        // Fallback or unauthenticated: load general menus
+        if (!tree || tree.length === 0) {
+          const response = await axios.get(`${this.apiBase}/menus`, { headers });
+          tree = response.data.data || [];
+        }
+
         const filtered = this.filterSidebarMenus(tree);
         this.menuList = filtered;
+
+        const userId = localStorage.getItem("userid");
+        const userCacheKey = userId ? `app_sidebar_menus_${userId}` : "app_sidebar_menus";
+        localStorage.setItem(userCacheKey, JSON.stringify(filtered));
         localStorage.setItem("app_sidebar_menus", JSON.stringify(filtered));
 
         this.$nextTick(() => {
@@ -123,7 +169,7 @@ export default {
           this.initActiveMenu();
         });
       } catch (err) {
-        console.error("Failed to load tkt_menus for sidebar:", err);
+        console.error("Failed to load menus for sidebar:", err);
       } finally {
         this.loading = false;
       }

@@ -1,6 +1,7 @@
 <script>
 localStorage.setItem("rightbar_isopen", false);
 import { layoutMethods, layoutComputed } from "@/state/helpers";
+import { defaultLayoutState } from "@/state/modules/layout";
 import simpleBar from "simplebar-vue";
 import {
   COLOR_PRESETS,
@@ -18,6 +19,10 @@ import {
   saveThemeConfig,
   resetThemeConfig,
 } from "@/helpers/themeConfig";
+import {
+  SIDEBAR_HEX_PRESETS,
+  applySidebarColorToDom,
+} from "@/helpers/sidebarHelper";
 
 /**
  * Right sidebar component
@@ -32,6 +37,7 @@ export default {
       activeTab: "components", // 'components' | 'layout'
       themeConfig: getThemeConfig(),
       colorPresets: COLOR_PRESETS,
+      sidebarHexPresets: SIDEBAR_HEX_PRESETS,
       buttonRadiusOptions: BUTTON_RADIUS_OPTIONS,
       buttonWeightOptions: BUTTON_WEIGHT_OPTIONS,
       buttonHoverOptions: BUTTON_HOVER_OPTIONS,
@@ -55,11 +61,7 @@ export default {
     // );
     localStorage.setItem(
       "resetValue",
-      JSON.stringify(this.$store.state.layout)
-    );
-    localStorage.setItem(
-      "resetValue",
-      JSON.stringify(this.$store.state.layout)
+      JSON.stringify(defaultLayoutState)
     );
   },
 
@@ -153,9 +155,35 @@ export default {
     onSideBarColorClick(color) {
       if (color !== "gradient") {
         this.showGradients = false;
+        this.sidebarColor = color;
       } else {
         this.showGradients = true;
         this.gradiantColor();
+      }
+    },
+
+    onSelectSidebarHex(hex) {
+      this.showGradients = false;
+      this.sidebarColor = hex;
+    },
+
+    onSidebarHexPickerInput(event) {
+      this.showGradients = false;
+      this.sidebarColor = event.target.value;
+    },
+
+    onSidebarHexTextChange(event) {
+      let val = (event.target.value || "").trim();
+      if (!val) return;
+      if (!val.startsWith("#")) {
+        val = "#" + val;
+      }
+      if (/^#[0-9A-Fa-f]{3,6}$/.test(val)) {
+        if (val.length === 4) {
+          val = "#" + val[1] + val[1] + val[2] + val[2] + val[3] + val[3];
+        }
+        this.showGradients = false;
+        this.sidebarColor = val;
       }
     },
 
@@ -281,6 +309,15 @@ export default {
   },
   computed: {
     ...layoutComputed,
+    currentUser() {
+      try {
+        const raw =
+          sessionStorage.getItem("authUser") || localStorage.getItem("user");
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    },
     layoutType: {
       get() {
         return this.$store ? this.$store.state.layout.layoutType : {} || {};
@@ -382,6 +419,21 @@ export default {
           sidebarColor: sidebarColor,
         });
       },
+    },
+
+    isHexSidebarColor() {
+      return typeof this.sidebarColor === "string" && this.sidebarColor.startsWith("#");
+    },
+
+    sidebarHexPickerValue() {
+      if (this.isHexSidebarColor && /^#[0-9A-Fa-f]{6}$/.test(this.sidebarColor)) {
+        return this.sidebarColor;
+      }
+      return "#1e293b";
+    },
+
+    sidebarHexInputValue() {
+      return this.isHexSidebarColor ? this.sidebarColor : "";
     },
 
     visibility: {
@@ -584,38 +636,8 @@ export default {
     sidebarColor: {
       immediate: true,
       deep: true,
-      handler(newVal, oldVal) {
-        if (newVal !== oldVal) {
-          switch (newVal) {
-            case "dark":
-              document.documentElement.setAttribute("data-sidebar", "dark");
-              break;
-            case "light":
-              document.documentElement.setAttribute("data-sidebar", "light");
-              break;
-            case "gradient":
-              document.documentElement.setAttribute("data-sidebar", "gradient");
-              break;
-            case "gradient-2":
-              document.documentElement.setAttribute(
-                "data-sidebar",
-                "gradient-2"
-              );
-              break;
-            case "gradient-3":
-              document.documentElement.setAttribute(
-                "data-sidebar",
-                "gradient-3"
-              );
-              break;
-            case "gradient-4":
-              document.documentElement.setAttribute(
-                "data-sidebar",
-                "gradient-4"
-              );
-              break;
-          }
-        }
+      handler(newVal) {
+        applySidebarColorToDom(newVal);
       },
     },
     sidebarImage: {
@@ -756,14 +778,29 @@ export default {
     </div>
     <BOffcanvas class="border-0" id="theme-settings-offcanvas" header-class="d-flex align-items-center bg-primary bg-gradient p-3" body-class="p-0" footer-class="border-top p-3 text-center" placement="end" v-model="show">
       <template #header>
-        <div class="me-2">
-          <h5 class="m-0 me-2 text-white">Theme & UI Customizer</h5>
+        <div class="me-2 d-flex align-items-center gap-2">
+          <h5 class="m-0 text-white">Theme & UI Customizer</h5>
+          <span class="badge bg-white bg-opacity-25 text-white fs-10 px-2 py-1 rounded-pill" title="Preferences are saved to your personal user account">
+            <i class="ri-user-settings-line me-1 align-middle"></i>Per User
+          </span>
         </div>
         <button type="button" class="btn-close btn-close-white ms-auto" id="customizerclose-btn" @click="click"></button>
       </template>
 
       <!-- Customizer Mode Tabs -->
       <div class="px-3 pt-3 pb-2 border-bottom bg-light">
+        <div
+          v-if="currentUser"
+          class="d-flex align-items-center justify-content-between mb-2 px-1 text-muted fs-11"
+        >
+          <span class="text-truncate me-2" :title="currentUser.name || currentUser.username || currentUser.email">
+            <i class="ri-user-smile-line me-1 text-primary"></i>Customizing for:
+            <strong class="text-body">{{ currentUser.name || currentUser.username || currentUser.email }}</strong>
+          </span>
+          <span class="badge bg-success-subtle text-success border border-success-subtle flex-shrink-0">
+            <i class="ri-cloud-line me-1"></i>Synced to Profile
+          </span>
+        </div>
         <ul class="nav nav-pills nav-justified p-1 bg-white rounded shadow-sm">
           <li class="nav-item">
             <a
@@ -1561,8 +1598,13 @@ export default {
             layoutType === 'twocolumn' ||
             (layoutType === 'semibox' && visibility === 'show')
             " id="sidebar-color">
-            <h6 class="mt-4 mb-0 fw-semibold text-uppercase">Sidebar Color</h6>
-            <p class="text-muted">Choose Ligth or Dark Sidebar Color.</p>
+            <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+              <h6 class="mb-0 fw-semibold text-uppercase">Sidebar Color</h6>
+              <span v-if="isHexSidebarColor" class="badge bg-primary-subtle text-primary border border-primary-subtle fs-11 font-monospace">
+                {{ sidebarColor }}
+              </span>
+            </div>
+            <p class="text-muted fs-12 mb-3">Choose Light, Dark, Gradient or Custom Hex Color.</p>
 
             <BRow>
               <BCol cols="4">
@@ -1638,7 +1680,7 @@ export default {
               </BCol>
             </BRow>
             <BCollapse v-if="showGradients" id="collapseBgGradient">
-              <div class="d-flex gap-2 flex-wrap img-switch p-2 px-3 bg-light rounded">
+              <div class="d-flex gap-2 flex-wrap img-switch p-2 px-3 bg-light rounded mt-2">
                 <div class="form-check sidebar-setting card-radio">
                   <input class="form-check-input" type="radio" v-model="sidebarColor" name="data-sidebar" id="sidebar-color-gradient" value="gradient" />
                   <label class="form-check-label p-0 avatar-xs rounded-circle" for="sidebar-color-gradient">
@@ -1665,6 +1707,68 @@ export default {
                 </div>
               </div>
             </BCollapse>
+
+            <!-- Custom Hex Sidebar Color Section -->
+            <div class="mt-3 pt-3 border-top">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <label class="form-label fs-11 text-muted text-uppercase fw-semibold mb-0">
+                  Custom Hex Color
+                </label>
+                <span v-if="isHexSidebarColor" class="badge bg-success-subtle text-success fs-10 text-uppercase fw-semibold">
+                  Active
+                </span>
+              </div>
+              <p class="text-muted fs-12 mb-2">Pick any color or type a hex code to customize the sidebar background.</p>
+
+              <!-- Curated Swatch Presets -->
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <button
+                  v-for="preset in sidebarHexPresets"
+                  :key="preset.hex"
+                  type="button"
+                  class="theme-swatch-btn"
+                  :class="{ active: isHexSidebarColor && sidebarColor.toLowerCase() === preset.hex.toLowerCase() }"
+                  :style="{ backgroundColor: preset.hex }"
+                  :title="preset.name"
+                  @click="onSelectSidebarHex(preset.hex)"
+                >
+                  <i v-if="isHexSidebarColor && sidebarColor.toLowerCase() === preset.hex.toLowerCase()" class="ri-check-line text-white fs-14"></i>
+                </button>
+              </div>
+
+              <!-- Native Color Picker & Hex Text Input with Clear Button -->
+              <div class="d-flex align-items-center gap-2">
+                <input
+                  type="color"
+                  class="form-control form-control-color p-1 cursor-pointer"
+                  :value="sidebarHexPickerValue"
+                  @input="onSidebarHexPickerInput"
+                  title="Choose custom sidebar hex color"
+                  style="width: 44px; height: 36px;"
+                />
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text font-monospace">HEX</span>
+                  <input
+                    type="text"
+                    class="form-control font-monospace"
+                    :value="sidebarHexInputValue"
+                    @change="onSidebarHexTextChange"
+                    @keyup.enter="onSidebarHexTextChange"
+                    placeholder="#1e293b"
+                    maxlength="7"
+                  />
+                  <button
+                    v-if="isHexSidebarColor"
+                    class="btn btn-outline-danger"
+                    type="button"
+                    title="Reset to Dark"
+                    @click="onSideBarColorClick('dark')"
+                  >
+                    <i class="ri-close-line"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div id="preloader-menu">

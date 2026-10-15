@@ -7,6 +7,7 @@ import NavBar from "@/components/nav-bar";
 import Menu from "@/components/menu.vue";
 import RightBar from "@/components/right-bar";
 import Footer from "@/components/footer";
+import { getSystemLogo } from "@/helpers/themeConfig";
 localStorage.setItem('hoverd', false);
 
 /**
@@ -17,6 +18,7 @@ export default {
   data() {
     return {
       isMenuCondensed: false,
+      systemLogo: getSystemLogo(),
     };
   },
   computed: {
@@ -79,29 +81,42 @@ export default {
     hideRightSidebar() {
       document.body.classList.remove("right-bar-enabled");
     },
-
+    handleSystemConfigUpdated(event) {
+      if (event?.detail && event.detail.system_logo !== undefined) {
+        this.systemLogo = event.detail.system_logo || null;
+      }
+    },
+    handleOverlayClick() {
+      document.body.classList.remove('vertical-sidebar-enable');
+    },
+    handleLayoutResize() {
+      document.body.classList.remove('vertical-sidebar-enable');
+      const hamburger = document.querySelector('.hamburger-icon');
+      if (hamburger) hamburger.classList.add('open');
+      this.updateSidebarSize();
+    },
   },
   mounted() {
+    window.addEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
+
     if (localStorage.getItem('hoverd') == 'true') {
       document.documentElement.setAttribute('data-sidebar-size', 'sm-hover-active');
     }
 
-    document.getElementById('overlay').addEventListener('click', () => {
-      document.body.classList.remove('vertical-sidebar-enable');
-    });
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.addEventListener('click', this.handleOverlayClick);
     if (window.screen.width < 1025) {
       document.documentElement.setAttribute("data-sidebar-size", "sm");
     }
 
-    window.addEventListener("resize", () => {
-      document.body.classList.remove('vertical-sidebar-enable');
-      document.querySelector(".hamburger-icon").classList.add("open")
-      this.updateSidebarSize()
-    });
+    window.addEventListener("resize", this.handleLayoutResize);
     
   },
   unmounted() {
-    window.removeEventListener("resize", this.updateSidebarSize )
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.removeEventListener('click', this.handleOverlayClick);
+    window.removeEventListener("resize", this.handleLayoutResize);
+    window.removeEventListener("system-configuration-updated", this.handleSystemConfigUpdated);
   }
 };
 </script>
@@ -118,19 +133,23 @@ export default {
           <!-- Dark Logo-->
           <router-link to="/" class="logo logo-dark">
             <span class="logo-sm">
-              <img src="@/assets/images/logo-sm.png" alt="" height="22" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-sm" />
+              <img v-else src="@/assets/images/logo-sm.png" alt="" height="22" />
             </span>
             <span class="logo-lg">
-              <img src="@/assets/images/logo-dark.png" alt="" height="17" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-lg" />
+              <img v-else src="@/assets/images/logo-dark.png" alt="" height="17" />
             </span>
           </router-link>
           <!-- Light Logo-->
           <router-link to="/" class="logo logo-light">
             <span class="logo-sm">
-              <img src="@/assets/images/logo-sm.png" alt="" height="22" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-sm" />
+              <img v-else src="@/assets/images/logo-sm.png" alt="" height="22" />
             </span>
             <span class="logo-lg">
-              <img src="@/assets/images/logo-light.png" alt="" height="17" />
+              <img v-if="systemLogo" :src="systemLogo" alt="Logo" class="sidebar-logo-lg" />
+              <img v-else src="@/assets/images/logo-light.png" alt="" height="17" />
             </span>
           </router-link>
           <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
@@ -164,3 +183,18 @@ export default {
     <RightBar />
   </div>
 </template>
+
+<style scoped>
+.sidebar-logo-lg {
+  max-height: 28px;
+  max-width: 140px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+.sidebar-logo-sm {
+  max-height: 22px;
+  max-width: 26px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+</style>

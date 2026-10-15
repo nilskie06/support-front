@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { applyUserPreferences } from '@/helpers/themeConfig';
 
 class LaravelAuthBackend {
     constructor(config = {}) {
@@ -75,7 +76,9 @@ class LaravelAuthBackend {
                 localStorage.removeItem('token');
                 localStorage.removeItem('userdata');
                 localStorage.removeItem('userid');
+                localStorage.removeItem('app_sidebar_menus');
                 delete axios.defaults.headers.common['Authorization'];
+                window.dispatchEvent(new CustomEvent('menus-updated'));
                 resolve(true);
             };
 
@@ -93,15 +96,29 @@ class LaravelAuthBackend {
         if (!user) {
             sessionStorage.removeItem('authUser');
             localStorage.removeItem('user');
+            localStorage.removeItem('userdata');
+            localStorage.removeItem('userid');
+            localStorage.removeItem('app_sidebar_menus');
+            window.dispatchEvent(new CustomEvent('menus-updated'));
             return;
         }
         sessionStorage.setItem('authUser', JSON.stringify(user));
         localStorage.setItem('user', JSON.stringify(user));
+        if (user.id) {
+            localStorage.setItem('userid', user.id);
+        }
         if (user.token) {
             localStorage.setItem('jwt', user.token);
             localStorage.setItem('token', user.token);
             axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
         }
+        if (user.theme_config || user.layout_config) {
+            applyUserPreferences({
+                theme_config: user.theme_config,
+                layout_config: user.layout_config,
+            });
+        }
+        window.dispatchEvent(new CustomEvent('menus-updated'));
     }
 
     setLoggeedInUser(user) {

@@ -1,3 +1,7 @@
+import store from "@/state/store";
+import { applySidebarColorToDom } from "./sidebarHelper";
+export { applySidebarColorToDom } from "./sidebarHelper";
+
 export const COLOR_PRESETS = [
   { id: "default", name: "Galaxy Indigo", hex: "#405189", rgb: "64, 81, 137" },
   { id: "emerald", name: "Emerald Teal", hex: "#0ab39c", rgb: "10, 179, 156" },
@@ -192,22 +196,163 @@ export function applyThemeToDom(config) {
   );
 }
 
-export function saveThemeConfig(config) {
+let themeSyncTimer = null;
+
+export function syncThemeConfigToServer(config) {
+  const token = localStorage.getItem("jwt") || localStorage.getItem("token");
+  if (!token) return;
+
+  clearTimeout(themeSyncTimer);
+  themeSyncTimer = setTimeout(() => {
+    const apiBase = process.env.VUE_APP_AUTHDOMAIN || "http://localhost:8001/api";
+    fetch(`${apiBase}/user/preferences`, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ theme_config: config }),
+    }).catch((e) => console.warn("Failed to sync theme config to user preferences:", e));
+  }, 600);
+}
+
+export function saveThemeConfig(config, syncToServer = true) {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(config));
     applyThemeToDom(config);
+    if (syncToServer) {
+      syncThemeConfigToServer(config);
+    }
   } catch (e) {
     console.error("Failed to save theme config:", e);
   }
 }
 
 export function resetThemeConfig() {
-  saveThemeConfig({ ...DEFAULT_THEME_CONFIG });
+  saveThemeConfig({ ...DEFAULT_THEME_CONFIG }, true);
   return { ...DEFAULT_THEME_CONFIG };
+}
+
+export function applyUserPreferences(preferences) {
+  if (!preferences || typeof preferences !== "object") return;
+  if (preferences.theme_config && Object.keys(preferences.theme_config).length > 0) {
+    saveThemeConfig(preferences.theme_config, false);
+  }
+  if (preferences.layout_config && Object.keys(preferences.layout_config).length > 0) {
+    store.commit("layout/RESTORE_LAYOUT", preferences.layout_config);
+  }
+}
+
+export function getSystemConfiguration() {
+  try {
+    const raw = localStorage.getItem("velzon_system_general_config");
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to parse stored system configuration:", e);
+  }
+  return null;
+}
+
+export function getSystemLogo() {
+  const config = getSystemConfiguration();
+  return config?.system_logo || null;
+}
+
+export function isMaintenanceModeActive() {
+  const config = getSystemConfiguration();
+  return Boolean(config?.maintenance_mode);
+}
+
+export async function fetchAndApplySystemConfiguration() {
+  try {
+    const apiBase = process.env.VUE_APP_AUTHDOMAIN || "http://localhost:8001/api";
+    const token = localStorage.getItem("jwt") || localStorage.getItem("token");
+    const endpoint = token ? `${apiBase}/system-configuration` : `${apiBase}/system-branding`;
+    const headers = {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    const response = await fetch(endpoint, { headers });
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const config = data.data;
+    if (!config) return null;
+
+    localStorage.setItem("velzon_system_general_config", JSON.stringify(config));
+
+    // Base default theme from system-wide configuration
+    let themeConfig = {
+      presetColor: config.preset_color || "default",
+      primaryColor: config.primary_color || "#405189",
+      buttonRadius: config.button_radius || "rounded",
+      buttonWeight: config.button_weight || "600",
+      buttonHoverEffect: config.button_hover_effect || "lift",
+      inputRadius: config.input_radius || "rounded",
+      inputBorderWidth: config.input_border_width || "1px",
+      inputStyle: config.input_style || "default",
+      inputFocusRing: config.input_focus_ring || "primary",
+      checkboxRadius: config.checkbox_radius || "subtle",
+      checkboxSize: config.checkbox_size || "default",
+      checkboxBorderWidth: config.checkbox_border_width || "1.5px",
+    };
+
+    let layoutConfig = (config.layout_config && typeof config.layout_config === "object")
+      ? config.layout_config
+      : null;
+
+    // Check if logged-in user has personal customizer preferences
+    if (token) {
+      try {
+        const userPrefRes = await fetch(`${apiBase}/user/preferences`, { headers });
+        if (userPrefRes.ok) {
+          const userPrefData = await userPrefRes.json();
+          const userPrefs = userPrefData.data;
+          if (userPrefs?.theme_config && Object.keys(userPrefs.theme_config).length > 0) {
+            themeConfig = { ...themeConfig, ...userPrefs.theme_config };
+          }
+          if (userPrefs?.layout_config && Object.keys(userPrefs.layout_config).length > 0) {
+            layoutConfig = userPrefs.layout_config;
+          }
+        }
+      } catch (prefErr) {
+        console.warn("Failed to fetch user preferences, falling back to system defaults:", prefErr);
+      }
+    }
+
+    saveThemeConfig(themeConfig, false);
+
+    if (layoutConfig) {
+      store.commit("layout/RESTORE_LAYOUT", layoutConfig);
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("system-configuration-updated", { detail: config })
+    );
+
+    return config;
+  } catch (err) {
+    console.warn("Failed to fetch system configuration:", err);
+    return null;
+  }
 }
 
 export function initAppTheme() {
   const config = getThemeConfig();
   applyThemeToDom(config);
+  try {
+    const rawLayout = localStorage.getItem("velzon_layout_shell_config");
+    if (rawLayout) {
+      const parsed = JSON.parse(rawLayout);
+      if (parsed.sidebarColor) {
+        applySidebarColorToDom(parsed.sidebarColor);
+      }
+    }
+  } catch (e) {
+    console.error("Failed to apply initial sidebar color:", e);
+  }
+  fetchAndApplySystemConfiguration();
   return config;
 }
